@@ -37,14 +37,14 @@ func main() {
 
 	/* API叩くアレ */
 
-	req, err := http.NewRequest(http.MethodGet, session["instance_url"]+"/services/data/", nil)
+	req, err := http.NewRequest(http.MethodGet, session["instance_url"]+"/services/data/v41.0/query/", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	req.Header.Add("Authorization", session["token_type"]+" "+session["access_token"])
 	req.Header.Add("Accept", "application/json")
 	values = url.Values{}
-	values.Add("q", "SELECT Name FROM Contact LIMIT 3")
+	values.Add("q", "SELECT Amount FROM Opportunity")
 	log.Printf("POST %s\n", req.URL)
 	req.URL.RawQuery = values.Encode()
 	res, err = http.DefaultClient.Do(req)
