@@ -14,6 +14,9 @@ import (
 func main() {
 	/* .env読み込み */
 	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	/* API認証 */
 	values := url.Values{}
 	values.Add("grant_type", "password")
@@ -34,7 +37,7 @@ func main() {
 
 	/* API叩くアレ */
 
-	req, err := http.NewRequest(http.MethodGet, session["instance_url"]+"/services/data/v41.0/query", nil)
+	req, err := http.NewRequest(http.MethodGet, session["instance_url"]+"/services/data/", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
