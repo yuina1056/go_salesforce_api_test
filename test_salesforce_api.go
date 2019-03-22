@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/koron/go-dproxy"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	values.Add("client_id", os.Getenv("client_id"))
 	values.Add("client_secret", os.Getenv("client_secret"))
 	values.Add("username", os.Getenv("username"))
-	values.Add("password", os.Getenv("password"))
+	values.Add("password", os.Getenv("password")+os.Getenv("token"))
 	res, err := http.PostForm(os.Getenv("loginURL"), values)
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +45,7 @@ func main() {
 	req.Header.Add("Authorization", session["token_type"]+" "+session["access_token"])
 	req.Header.Add("Accept", "application/json")
 	values = url.Values{}
-	values.Add("q", "SELECT Amount FROM Opportunity")
+	values.Add("q", "SELECT Name,Amount,CloseDate FROM Opportunity")
 	log.Printf("POST %s\n", req.URL)
 	req.URL.RawQuery = values.Encode()
 	res, err = http.DefaultClient.Do(req)
@@ -57,5 +58,38 @@ func main() {
 	if err = decoder.Decode(&out); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%v\n", out)
+
+	outdproxy := dproxy.New(out)
+	beforerecordlength, err := outdproxy.M("totalSize").Int64()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var recordlength = int(beforerecordlength)
+
+	resultarray, err := outdproxy.M("records").Array()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	count := 0
+	for count < recordlength {
+		resultdproxy := dproxy.New(resultarray[count])
+		name, err := resultdproxy.M("Name").String()
+		if err != nil {
+			log.Fatal(err)
+		}
+		amount, err := resultdproxy.M("Amount").Int64()
+		if err != nil {
+			log.Fatal(err)
+		}
+		closedate, err := resultdproxy.M("CloseDate").String()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("name:%s,amount:%d,closedate:%s", name, amount, closedate)
+		fmt.Print("\n")
+		count++
+	}
+
 }
