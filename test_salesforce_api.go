@@ -8,9 +8,19 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"github.com/joho/godotenv"
 	"github.com/koron/go-dproxy"
 )
+
+/* mongoにつっこむ構造体 */
+type SalesAmount struct {
+	ID        bson.ObjectId `bson:"_id"`
+	Name      string        `bson:"Name"`
+	Amount    int64         `bson:"Amount"`
+	CloseDate string        `bson:"CloseDate"`
+}
 
 func main() {
 	/* .env読み込み */
@@ -34,6 +44,7 @@ func main() {
 	if err := decoder.Decode(&session); err != nil {
 		log.Fatal(err)
 	}
+	log.Print(res)
 	log.Printf("Login successful. Instance: %s", session["instance_url"])
 
 	/* API叩くアレ */
@@ -71,6 +82,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	dbsession, _ := mgo.Dial("mongodb://localhost/")
+	defer dbsession.Close()
+	db := dbsession.DB("salesforce_api_test")
+
 	count := 0
 	for count < recordlength {
 		resultdproxy := dproxy.New(resultarray[count])
@@ -89,6 +104,18 @@ func main() {
 
 		fmt.Printf("name:%s,amount:%d,closedate:%s", name, amount, closedate)
 		fmt.Print("\n")
+
+		salesamount := &SalesAmount{
+			ID:        bson.NewObjectId(),
+			Name:      name,
+			Amount:    amount,
+			CloseDate: closedate,
+		}
+		col := db.C("Amount")
+		if err := col.Insert(salesamount); err != nil {
+			log.Fatalln(err)
+		}
+
 		count++
 	}
 
