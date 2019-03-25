@@ -14,7 +14,6 @@ import (
 	"github.com/koron/go-dproxy"
 )
 
-/* mongoにつっこむ構造体 */
 type SalesAmount struct {
 	ID        bson.ObjectId `bson:"_id"`
 	Name      string        `bson:"Name"`
@@ -82,9 +81,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbsession, _ := mgo.Dial("mongodb://localhost/")
+	dbsession, _ := mgo.Dial(os.Getenv("MONGODB_URI"))
 	defer dbsession.Close()
-	db := dbsession.DB("salesforce_api_test")
+	db := dbsession.DB("heroku_zb22vxl8")
 
 	count := 0
 	for count < recordlength {
