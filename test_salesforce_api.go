@@ -10,7 +10,6 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/joho/godotenv"
 	"github.com/koron/go-dproxy"
 )
 
@@ -22,11 +21,6 @@ type SalesAmount struct {
 }
 
 func main() {
-	/* .env読み込み */
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
 	/* API認証 */
 	values := url.Values{}
 	values.Add("grant_type", "password")
@@ -43,7 +37,7 @@ func main() {
 	if err := decoder.Decode(&session); err != nil {
 		log.Fatal(err)
 	}
-	log.Print(res)
+	//	log.Print(res)
 	log.Printf("Login successful. Instance: %s", session["instance_url"])
 
 	/* API叩くアレ */
@@ -83,7 +77,7 @@ func main() {
 
 	dbsession, _ := mgo.Dial(os.Getenv("MONGODB_URI"))
 	defer dbsession.Close()
-	db := dbsession.DB("heroku_zb22vxl8")
+	db := dbsession.DB(os.Getenv("MONGODB_NAME"))
 
 	count := 0
 	for count < recordlength {
@@ -101,9 +95,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("name:%s,amount:%d,closedate:%s", name, amount, closedate)
-		fmt.Print("\n")
-
 		salesamount := &SalesAmount{
 			ID:        bson.NewObjectId(),
 			Name:      name,
@@ -112,10 +103,13 @@ func main() {
 		}
 		col := db.C("Amount")
 		if err := col.Insert(salesamount); err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
+
+		fmt.Printf("name:%s,amount:%d,closedate:%s", name, amount, closedate)
+		fmt.Print("\n")
 
 		count++
 	}
-
+	log.Print("finish!")
 }
